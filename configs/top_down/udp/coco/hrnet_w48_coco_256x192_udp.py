@@ -8,7 +8,7 @@ evaluation = dict(interval=10, metric='mAP', key_indicator='AP')
 
 optimizer = dict(
     type='Adam',
-    lr=0.003,
+    lr=5e-4,
 )
 optimizer_config = dict(grad_clip=None)
 # learning policy
@@ -41,7 +41,7 @@ channel_cfg = dict(
 model = dict(
     type='TopDown',
     pretrained='https://download.openmmlab.com/mmpose/'
-    'pretrain_models/hrnet_w32-36af842e.pth',
+    'pretrain_models/hrnet_w48-8ef0771d.pth',
     backbone=dict(
         type='HRNet',
         in_channels=3,
@@ -57,23 +57,23 @@ model = dict(
                 num_branches=2,
                 block='BASIC',
                 num_blocks=(4, 4),
-                num_channels=(32, 64)),
+                num_channels=(48, 96)),
             stage3=dict(
                 num_modules=4,
                 num_branches=3,
                 block='BASIC',
                 num_blocks=(4, 4, 4),
-                num_channels=(32, 64, 128)),
+                num_channels=(48, 96, 192)),
             stage4=dict(
                 num_modules=3,
                 num_branches=4,
                 block='BASIC',
                 num_blocks=(4, 4, 4, 4),
-                num_channels=(32, 64, 128, 256))),
+                num_channels=(48, 96, 192, 384))),
     ),
     keypoint_head=dict(
         type='TopDownSimpleHead',
-        in_channels=32,
+        in_channels=48,
         out_channels=channel_cfg['num_output_channels'],
         num_deconv_layers=0,
         extra=dict(final_conv_kernel=1, ),
@@ -112,8 +112,7 @@ train_pipeline = [
         num_joints_half_body=8,
         prob_half_body=0.3),
     dict(
-        type='TopDownGetRandomScaleRotation', rot_factor=45,
-        scale_factor=0.35),
+        type='TopDownGetRandomScaleRotation', rot_factor=40, scale_factor=0.5),
     dict(type='TopDownAffine', use_udp=True),
     dict(type='ToTensor'),
     dict(
@@ -121,7 +120,10 @@ train_pipeline = [
         mean=[0.485, 0.456, 0.406],
         std=[0.229, 0.224, 0.225]),
     dict(
-        type='TopDownGenerateTarget', encoding='UDP', target_type=target_type),
+        type='TopDownGenerateTarget',
+        sigma=2,
+        encoding='UDP',
+        target_type=target_type),
     dict(
         type='Collect',
         keys=['img', 'target', 'target_weight'],
@@ -152,7 +154,7 @@ test_pipeline = val_pipeline
 
 data_root = 'data/coco'
 data = dict(
-    samples_per_gpu=48,
+    samples_per_gpu=32,
     workers_per_gpu=2,
     train=dict(
         type='TopDownCocoDataset',

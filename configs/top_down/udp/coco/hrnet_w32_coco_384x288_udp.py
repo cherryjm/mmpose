@@ -8,7 +8,7 @@ evaluation = dict(interval=10, metric='mAP', key_indicator='AP')
 
 optimizer = dict(
     type='Adam',
-    lr=0.003,
+    lr=5e-4,
 )
 optimizer_config = dict(grad_clip=None)
 # learning policy
@@ -84,12 +84,12 @@ model = dict(
         post_process='default',
         shift_heatmap=False,
         target_type=target_type,
-        modulate_kernel=11,
+        modulate_kernel=17,
         use_udp=True))
 
 data_cfg = dict(
-    image_size=[192, 256],
-    heatmap_size=[48, 64],
+    image_size=[288, 384],
+    heatmap_size=[72, 96],
     num_output_channels=channel_cfg['num_output_channels'],
     num_joints=channel_cfg['dataset_joints'],
     dataset_channel=channel_cfg['dataset_channel'],
@@ -112,8 +112,7 @@ train_pipeline = [
         num_joints_half_body=8,
         prob_half_body=0.3),
     dict(
-        type='TopDownGetRandomScaleRotation', rot_factor=45,
-        scale_factor=0.35),
+        type='TopDownGetRandomScaleRotation', rot_factor=40, scale_factor=0.5),
     dict(type='TopDownAffine', use_udp=True),
     dict(type='ToTensor'),
     dict(
@@ -121,7 +120,10 @@ train_pipeline = [
         mean=[0.485, 0.456, 0.406],
         std=[0.229, 0.224, 0.225]),
     dict(
-        type='TopDownGenerateTarget', encoding='UDP', target_type=target_type),
+        type='TopDownGenerateTarget',
+        sigma=3,
+        encoding='UDP',
+        target_type=target_type),
     dict(
         type='Collect',
         keys=['img', 'target', 'target_weight'],
@@ -152,7 +154,7 @@ test_pipeline = val_pipeline
 
 data_root = 'data/coco'
 data = dict(
-    samples_per_gpu=48,
+    samples_per_gpu=64,
     workers_per_gpu=2,
     train=dict(
         type='TopDownCocoDataset',
